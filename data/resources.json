@@ -1,0 +1,54 @@
+[
+  {
+    "id": "res-demo-ar-1",
+    "lang": "ar",
+    "title": "درس المعادلات من الدرجة الأولى",
+    "category": "lesson",
+    "grade": "g-1ac",
+    "subject": "s-math",
+    "date": "2026-11-01",
+    "description": "ملخص الدرس مع أمثلة محلولة. (مثال تجريبي - يمكنك حذفه)",
+    "body": "<h2>تعريف</h2><p>المعادلة من الدرجة الأولى بمجهول واحد هي معادلة على شكل <b>ax + b = 0</b>.</p><h2>مثال</h2><p>حل المعادلة 2x + 6 = 0 : x = −3.</p>",
+    "image": "",
+    "files": []
+  },
+  {
+    "id": "res-demo-ar-2",
+    "lang": "ar",
+    "title": "فرض محروس رقم 1 - الفيزياء والكيمياء",
+    "category": "exam",
+    "grade": "g-2ac",
+    "subject": "s-physics",
+    "date": "2026-10-25",
+    "description": "فرض الدورة الأولى. أضف ملف PDF من لوحة الإدارة. (مثال تجريبي)",
+    "body": "<p>يمكنك إضافة نص الفرض هنا أو إرفاق ملف PDF / Word.</p>",
+    "image": "",
+    "files": []
+  },
+  {
+    "id": "res-demo-fr-1",
+    "lang": "fr",
+    "title": "Cours : Les fractions",
+    "category": "lesson",
+    "grade": "g-1ac",
+    "subject": "s-math",
+    "date": "2026-11-02",
+    "description": "Résumé du cours avec exemples. (exemple de démonstration - à supprimer)",
+    "body": "<h2>Définition</h2><p>Une fraction représente une partie d'un tout : <b>a / b</b> avec b ≠ 0.</p>",
+    "image": "",
+    "files": []
+  },
+  {
+    "id": "res-demo-fr-2",
+    "lang": "fr",
+    "title": "Corrigé de l'examen n°1 - Français",
+    "category": "correction",
+    "grade": "g-3ac",
+    "subject": "s-french",
+    "date": "2026-10-28",
+    "description": "Correction détaillée. Ajoutez le fichier PDF depuis l'administration. (exemple)",
+    "body": "<p>Ajoutez ici le texte du corrigé ou joignez un fichier PDF / Word.</p>",
+    "image": "",
+    "files": []
+  }
+]

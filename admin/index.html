@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>RaedClass Admin</title>
+<style>
+:root{--p:#4338ca;--line:#e4e7ef;--bg:#f7f8fc;--mut:#667085}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:#1e2235;line-height:1.5}
+header{background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+header h1{font-size:1.1rem;margin:0;color:var(--p);margin-inline-end:auto}
+button,.btn{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600}
+button:hover{border-color:var(--p);color:var(--p)}
+button.primary{background:var(--p);color:#fff;border-color:var(--p)}
+button.primary:hover{color:#fff;opacity:.9}
+button.danger{color:#b42318}
+button.small{padding:3px 9px;font-size:.82rem}
+#status{font-size:.9rem;color:var(--mut)}
+#status.dirty{color:#b54708;font-weight:700}
+nav{display:flex;gap:6px;padding:12px 20px;flex-wrap:wrap}
+nav button.on{background:var(--p);color:#fff;border-color:var(--p)}
+main{max-width:980px;margin:0 auto;padding:0 20px 80px}
+.notice{background:#eef0ff;border:1px solid #c7ccff;border-radius:10px;padding:14px 16px;margin:16px 0}
+.notice.warn{background:#fffaeb;border-color:#fedf89}
+h2{margin:22px 0 8px}
+details{background:#fff;border:1px solid var(--line);border-radius:10px;margin:8px 0}
+summary{padding:10px 14px;cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center}
+summary .t{flex:1}
+summary .sub{color:var(--mut);font-weight:400;font-size:.85rem}
+.body{padding:6px 16px 16px;border-top:1px solid var(--line)}
+label.f{display:block;margin-top:12px;font-weight:600;font-size:.88rem}
+label.f small{font-weight:400;color:var(--mut);display:block}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;margin-top:4px}
+textarea{min-height:90px;resize:vertical}
+textarea.html{min-height:200px;font-family:Consolas,monospace;font-size:.9rem}
+.bi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bi .ar input,.bi .ar textarea{direction:rtl;text-align:right}
+.bi span.l{font-size:.75rem;color:var(--mut)}
+.row{display:flex;gap:6px;align-items:center;margin-top:4px}
+.row input{margin-top:0}
+.tb{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.group{border:1px dashed var(--line);border-radius:10px;padding:2px 14px 14px;margin-top:14px;background:#fcfcff}
+.group>b{display:block;margin-top:10px}
+.bar{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.bar input{flex:1;min-width:180px;margin:0}
+.actions{display:flex;gap:6px;margin-top:14px;justify-content:flex-end}
+.ro{font-family:Consolas,monospace;font-size:.8rem;color:var(--mut)}
+@media(max-width:700px){.bi{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>RaedClass · Admin</h1>
+  <span id="status">Not connected</span>
+  <button id="connect" class="primary">1. Connect site folder</button>
+  <button id="save" disabled>2. Save all changes</button>
+  <button id="dl" title="Use this if your browser can't save into the folder">Download JSON backup</button>
+</header>
+<nav id="tabs"></nav>
+<main id="main"></main>
+
+<script>
+/* ===== state ===== */
+const D = { site:null, taxonomy:null, resources:null, pages:null };
+const FILES = { site:'site.json', taxonomy:'taxonomy.json', resources:'resources.json', pages:'pages.json' };
+let root = null, dirty = false, tab = 'resources';
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (tag, attrs={}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k==='class') e.className=v; else if (k.startsWith('on')) e[k]=v; else if (v!==false && v!=null) e.setAttribute(k,v);
+  }
+  kids.flat().forEach(c => e.append(c?.nodeType ? c : document.createTextNode(c ?? '')));
+  return e;
+};
+const uid = p => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+const nmv = o => (o && (o.fr || o.ar)) || '';
+const setDirty = v => { dirty = v; const s=$('#status'); s.textContent = v ? 'Unsaved changes' : (root ? 'Connected - all saved' : 'Not connected'); s.className = v ? 'dirty' : ''; $('#save').disabled = !(root && v); };
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue=''; } });
+
+/* ===== loading / saving ===== */
+async function readFromFolder(h) {
+  const dd = await h.getDirectoryHandle('data');
+  for (const [k,f] of Object.entries(FILES)) {
+    const fh = await dd.getFileHandle(f);
+    D[k] = JSON.parse(await (await fh.getFile()).text());
+  }
+}
+async function readFromServer() {
+  for (const [k,f] of Object.entries(FILES)) {
+    const r = await fetch('../data/'+f+'?v='+Date.now()); if (!r.ok) throw new Error(f);
+    D[k] = await r.json();
+  }
+}
+$('#connect').onclick = async () => {
+  if (!window.showDirectoryPicker) { alert('Your browser cannot save directly into folders.\nUse Chrome or Edge on a computer. (Without it, you can still edit and use "Download JSON backup", then copy the files into the data folder yourself.)'); return; }
+  try {
+    root = await showDirectoryPicker({ mode:'readwrite' });
+    await readFromFolder(root);
+    setDirty(false); render();
+  } catch (e) { root = null; if (e.name !== 'AbortError') alert('Could not open the folder. Choose the main RaedClass folder (the one containing index.html and data).\n\n'+e.message); }
+};
+async function writeText(dir, name, text) {
+  const fh = await dir.getFileHandle(name, { create:true });
+  const w = await fh.createWritable(); await w.write(text); await w.close();
+}
+$('#save').onclick = async () => {
+  try {
+    const dd = await root.getDirectoryHandle('data', { create:true });
+    for (const [k,f] of Object.entries(FILES)) await writeText(dd, f, JSON.stringify(D[k], null, 2));
+    setDirty(false); alert('Saved. Refresh your website to see the changes.');
+  } catch (e) { alert('Save failed: '+e.message); }
+};
+$('#dl').onclick = () => {
+  if (!D.site) return alert('Nothing loaded yet.');
+  for (const [k,f] of Object.entries(FILES)) {
+    const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(D[k],null,2)],{type:'application/json'})), download:f });
+    document.body.append(a); a.click(); a.remove();
+  }
+};
+async function upload(file, folder) {
+  if (!root) { alert('Connect the site folder first (button 1) so files can be saved into it.'); return null; }
+  const dir = await root.getDirectoryHandle(folder, { create:true });
+  let name = file.name.normalize('NFKD').replace(/[^\w.\-]+/g,'-').replace(/-+/g,'-');
+  if (!/[a-z0-9]/i.test(name.replace(/\.[^.]*$/,''))) name = 'file-' + Date.now() + (name.match(/\.[^.]*$/)||[''])[0];
+  try { await dir.getFileHandle(name); name = Date.now().toString(36)+'-'+name; } catch {}
+  const fh = await dir.getFileHandle(name, { create:true });
+  const w = await fh.createWritable(); await w.write(file); await w.close();
+  return folder + '/' + name;
+}
+
+/* ===== schemas ===== */
+const taxOpts = (key, withLevel) => () => (D.taxonomy[key]||[]).map(x => ({
+  value:x.id,
+  label: (withLevel ? nmv((D.taxonomy.levels.find(l=>l.id===x.level)||{}).name)+' — ' : '') + nmv(x.name)
+}));
+const LANGS = [{value:'ar',label:'العربية (Arabic)'},{value:'fr',label:'Français (French)'}];
+
+const resourceSchema = [
+  { key:'id', type:'id' },
+  { key:'lang', label:'Language of this content', type:'select', options:()=>LANGS },
+  { key:'title', label:'Title', type:'text' },
+  { key:'category', label:'Type (lesson / exercise / exam / correction…)', type:'select', options:taxOpts('categories'), blank:true },
+  { key:'grade', label:'Grade / class', type:'select', options:taxOpts('grades', true), blank:true },
+  { key:'subject', label:'Subject', type:'select', options:taxOpts('subjects'), blank:true },
+  { key:'date', label:'Date', type:'date' },
+  { key:'description', label:'Short description (shown on the card)', type:'textarea' },
+  { key:'body', label:'Content (optional text of the lesson/exam)', type:'html' },
+  { key:'image', label:'Cover image (optional)', type:'file', folder:'images', accept:'image/*' },
+  { key:'files', label:'Downloadable files (PDF / Word)', type:'list', itemTitle:f=>f.label||f.path||'file', newItem:()=>({label:'',path:''}),
+    schema:[ {key:'label',label:'Button text (e.g. "Lesson PDF")',type:'text'},
+             {key:'path',label:'File',type:'file',folder:'files',accept:'.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,image/*'} ] }
+];
+const nameSchema = [ {key:'id',type:'id'}, {key:'name',label:'Name',type:'bi'} ];
+const gradeSchema = [ {key:'id',type:'id'}, {key:'level',label:'Educational level',type:'select',options:taxOpts('levels')}, {key:'name',label:'Name',type:'bi'} ];
+const pageSchema = [
+  { key:'slug', label:'Page address (letters/numbers/dashes only, e.g. "about")', type:'text' },
+  { key:'title', label:'Title', type:'bi' },
+  { key:'body', label:'Content', type:'bihtml' }
+];
+const UIKEYS = ['browse','search','allGrades','allSubjects','allCategories','noResults','download','view','related','back','home','notFound'];
+const sectionSchema = [
+  { key:'type', label:'Section type', type:'select', options:()=>[
+    {value:'levels',label:'Levels and grades'},{value:'latest',label:'Latest resources'},{value:'subjects',label:'Subjects'},
+    {value:'categories',label:'Types (lessons, exams…)'},{value:'text',label:'Free text block'}] },
+  { key:'title', label:'Section title', type:'bi' },
+  { key:'count', label:'Number of items (for "Latest resources")', type:'number' },
+  { key:'body', label:'Text (for "Free text block")', type:'bihtml' }
+];
+const siteSchema = [
+  { key:'name', label:'Site name', type:'text' },
+  { key:'defaultLang', label:'Default language', type:'select', options:()=>LANGS },
+  { key:'logo', label:'Logo image (optional)', type:'file', folder:'images', accept:'image/*' },
+  { key:'tagline', label:'Tagline', type:'bi' },
+  { key:'nav', label:'Navigation menu', type:'list', itemTitle:n=>nmv(n.label)||n.href, newItem:()=>({label:{ar:'',fr:''},href:'#/'}),
+    schema:[ {key:'label',label:'Label',type:'bi'},
+             {key:'href',label:'Link',type:'text',hint:'#/ = home · #/browse = library · #/browse?category=exam · #/page/about = a custom page · or a full https:// link'} ] },
+  { key:'home', label:'Homepage', type:'group', schema:[
+      {key:'heroTitle',label:'Big title',type:'bi'},
+      {key:'heroText',label:'Intro text',type:'bitext'},
+      {key:'heroImage',label:'Hero image (optional)',type:'file',folder:'images',accept:'image/*'},
+      {key:'sections',label:'Homepage sections (order = order on the page)',type:'list',ordered:true,itemTitle:s=>(nmv(s.title)||s.type)+'  ['+s.type+']',newItem:()=>({type:'latest',title:{ar:'',fr:''},count:6}),schema:sectionSchema} ] },
+  { key:'footer', label:'Footer text', type:'bi' },
+  { key:'ui', label:'Interface words (buttons, labels)', type:'group', schema: UIKEYS.map(k=>({key:k,label:k,type:'bi'})) }
+];
+
+/* ===== generic renderers ===== */
+function toolbar(ta) {
+  const wrap = (a,b) => { const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value; ta.value=v.slice(0,s)+a+v.slice(s,e)+b+v.slice(e); ta.focus(); ta.selectionStart=s+a.length; ta.selectionEnd=e+a.length; ta.dispatchEvent(new Event('input')); };
+  const btn = (l,fn) => el('button',{type:'button',class:'small',onclick:fn},l);
+  return el('div',{class:'tb'},
+    btn('Bold',()=>wrap('<b>','</b>')), btn('Italic',()=>wrap('<i>','</i>')),
+    btn('Title',()=>wrap('<h2>','</h2>')), btn('Subtitle',()=>wrap('<h3>','</h3>')),
+    btn('Paragraph',()=>wrap('<p>','</p>')), btn('List',()=>wrap('<ul>\n<li>','</li>\n</ul>')),
+    btn('Link',()=>{ const u=prompt('Link address (https://… or files/name.pdf)'); if(u) wrap('<a href="'+u+'">','</a>'); }),
+    btn('Image…',async()=>{ const i=el('input',{type:'file',accept:'image/*'}); i.onchange=async()=>{ const p=await upload(i.files[0],'images'); if(p) wrap('<img src="'+p+'" alt="">',''); }; i.click(); }));
+}
+function field(f, obj) {
+  if (f.type==='id') return el('div',{class:'ro'},'ID: '+(obj[f.key]||'(auto)'));
+  if (f.type==='list') { obj[f.key] ||= []; return listUI(f, obj[f.key]); }
+  if (f.type==='group') { obj[f.key] ||= {}; const g = el('div',{class:'group'}, el('b',{},f.label)); f.schema.forEach(x=>g.append(field(x,obj[f.key]))); return g; }
+  const lab = el('label',{class:'f'}, f.label, f.hint ? el('small',{},f.hint) : '');
+  const on = (get,set) => { set(); setDirty(true); };
+  if (f.type==='bi' || f.type==='bitext' || f.type==='bihtml') {
+    obj[f.key] ||= {ar:'',fr:''};
+    const mk = lg => {
+      const multi = f.type!=='bi';
+      const inp = multi ? el('textarea',{class: f.type==='bihtml'?'html':''}) : el('input',{type:'text'});
+      inp.value = obj[f.key][lg] || '';
+      inp.oninput = () => { obj[f.key][lg]=inp.value; setDirty(true); };
+      return el('div',{class:lg}, el('span',{class:'l'}, lg==='ar'?'العربية':'Français'), inp, f.type==='bihtml'?toolbar(inp):'');
+    };
+    lab.append(el('div',{class:'bi'}, mk('ar'), mk('fr'))); return lab;
+  }
+  if (f.type==='select') {
+    const s = el('select'); const opts = f.options();
+    if (f.blank) s.append(el('option',{value:''},'— none —'));
+    opts.forEach(o=>s.append(el('option',{value:o.value},o.label)));
+    s.value = obj[f.key] || (f.blank ? '' : (opts[0]?.value ?? ''));
+    if (!f.blank && obj[f.key]===undefined) obj[f.key]=s.value;
+    s.onchange = () => { obj[f.key]=s.value; setDirty(true); };
+    lab.append(s); return lab;
+  }
+  if (f.type==='file') {
+    const inp = el('input',{type:'text',placeholder:'e.g. files/lesson1.pdf'}); inp.value = obj[f.key]||'';
+    inp.oninput = () => { obj[f.key]=inp.value; setDirty(true); };
+    const pick = el('input',{type:'file',accept:f.accept||''}); pick.style.display='none';
+    pick.onchange = async () => { const p = await upload(pick.files[0], f.folder); if (p) { inp.value=p; obj[f.key]=p; setDirty(true); } };
+    lab.append(el('div',{class:'row'}, inp, el('button',{type:'button',onclick:()=>pick.click()},'Upload…'), pick,
+      el('button',{type:'button',class:'danger',onclick:()=>{inp.value='';obj[f.key]='';setDirty(true);}},'Clear')));
+    return lab;
+  }
+  const inp = f.type==='textarea'||f.type==='html' ? el('textarea',{class:f.type==='html'?'html':''}) : el('input',{type:f.type==='date'?'date':f.type==='number'?'number':'text'});
+  inp.value = obj[f.key] ?? '';
+  inp.oninput = () => { obj[f.key] = f.type==='number' ? +inp.value : inp.value; setDirty(true); };
+  lab.append(inp); if (f.type==='html') lab.append(toolbar(inp));
+  return lab;
+}
+function listUI(f, arr) {
+  const box = el('div',{class:'group'}, el('b',{},f.label||''));
+  const list = el('div');
+  const search = f.search ? el('input',{type:'text',placeholder:'Search…'}) : null;
+  const draw = () => {
+    list.innerHTML='';
+    const q = (search?.value||'').toLowerCase();
+    arr.forEach((item,i) => {
+      const title = (f.itemTitle ? f.itemTitle(item) : '') || '(untitled)';
+      const sub = f.itemSub ? f.itemSub(item) : '';
+      if (q && !(title+' '+sub).toLowerCase().includes(q)) return;
+      const d = el('details',{}, el('summary',{}, el('span',{class:'t'}, title), el('span',{class:'sub'}, sub)));
+      let built = false;
+      d.addEventListener('toggle', () => {
+        if (!d.open || built) return; built = true;
+        const b = el('div',{class:'body'}); f.schema.forEach(s=>b.append(field(s,item)));
+        const act = el('div',{class:'actions'});
+        if (f.ordered || f.type==='list') {
+          act.append(el('button',{type:'button',onclick:()=>{ if(i>0){[arr[i-1],arr[i]]=[arr[i],arr[i-1]]; setDirty(true); draw();} }},'↑ Up'),
+                     el('button',{type:'button',onclick:()=>{ if(i<arr.length-1){[arr[i+1],arr[i]]=[arr[i],arr[i+1]]; setDirty(true); draw();} }},'↓ Down'));
+        }
+        act.append(el('button',{type:'button',class:'danger',onclick:()=>{
+          const extra = f.usage ? f.usage(item) : '';
+          if (confirm('Delete "'+title+'"?'+(extra?'\n\n'+extra:'')+'\n\nThis cannot be undone after saving.')) { arr.splice(i,1); setDirty(true); draw(); }
+        }},'Delete'));
+        b.append(act); d.append(b);
+      });
+      list.append(d);
+    });
+    if (!list.children.length) list.append(el('p',{class:'ro'},'Nothing here yet.'));
+  };
+  if (search) search.oninput = draw;
+  const add = el('button',{type:'button',class:'primary',onclick:()=>{
+    const it = f.newItem ? f.newItem() : {};
+    f.schema.forEach(s=>{ if(s.type==='id') it[s.key]=uid(f.idPrefix||'x'); });
+    arr.unshift(it); setDirty(true); if (search) search.value=''; draw();
+    const first=list.querySelector('details'); if(first) first.open=true;
+  }}, '+ Add new');
+  box.append(el('div',{class:'bar'}, add, search||''), list);
+  draw(); return box;
+}
+
+/* ===== tabs ===== */
+const TABS = {
+  resources:{ label:'Lessons, exercises, exams…', render:()=> {
+    return [ el('div',{class:'notice'},'Each item belongs to ONE language. To publish the same lesson in Arabic and French, add two items (one per language).'),
+      listUI({ type:'list', label:'All resources', schema:resourceSchema, idPrefix:'res', search:true,
+        itemTitle:r=>r.title, itemSub:r=>(r.lang||'').toUpperCase()+' · '+(r.date||''),
+        newItem:()=>({lang:'ar',title:'',category:'',grade:'',subject:'',date:new Date().toISOString().slice(0,10),description:'',body:'',image:'',files:[]}) }, D.resources) ];
+  }},
+  structure:{ label:'Levels, grades, subjects, types', render:()=> {
+    const T = D.taxonomy;
+    const use = (k)=> it => { const n = D.resources.filter(r=>r[k]===it.id).length; return n ? n+' resource(s) use this. They will lose this label.' : ''; };
+    return [
+      el('div',{class:'notice'},'Add a new level, grade, subject or type here. It instantly appears in the website filters and homepage.'),
+      listUI({label:'Educational levels (e.g. Primary, College, Lycée)',schema:nameSchema,idPrefix:'lvl',itemTitle:x=>nmv(x.name),newItem:()=>({name:{ar:'',fr:''}}),ordered:true,
+              usage:it=>T.grades.some(g=>g.level===it.id)?'Grades inside this level will be hidden from filters.':''},T.levels),
+      listUI({label:'Grades / classes',schema:gradeSchema,idPrefix:'g',itemTitle:x=>nmv(x.name),itemSub:x=>nmv((T.levels.find(l=>l.id===x.level)||{}).name),newItem:()=>({level:T.levels[0]?.id||'',name:{ar:'',fr:''}}),usage:use('grade')},T.grades),
+      listUI({label:'Subjects',schema:nameSchema,idPrefix:'s',itemTitle:x=>nmv(x.name),newItem:()=>({name:{ar:'',fr:''}}),usage:use('subject')},T.subjects),
+      listUI({label:'Types / sections (lesson, exercise, exam, correction…)',schema:nameSchema,idPrefix:'cat',itemTitle:x=>nmv(x.name),newItem:()=>({name:{ar:'',fr:''}}),usage:use('category')},T.categories)
+    ];
+  }},
+  pages:{ label:'Pages', render:()=> [
+    el('div',{class:'notice'},'Create new pages (About, Contact, Help…). To show a page in the menu, go to "Homepage & menu" and add a link: #/page/<page address>.'),
+    listUI({label:'Custom pages',schema:pageSchema,itemTitle:p=>nmv(p.title),itemSub:p=>'#/page/'+p.slug,newItem:()=>({slug:'new-page',title:{ar:'',fr:''},body:{ar:'',fr:''}})},D.pages) ]},
+  site:{ label:'Homepage & menu', render:()=> {
+    const box = el('div'); siteSchema.forEach(f=>box.append(field(f,D.site))); return [box];
+  }},
+  help:{ label:'Help', render:()=> [ el('div',{class:'notice'}, el('b',{},'How it works'), el('ol',{},
+      el('li',{},'Click "Connect site folder" and pick the RaedClass folder (Chrome or Edge).'),
+      el('li',{},'Add / edit / delete items in the tabs above. Use "Upload…" to attach PDF or Word files — they are copied into the files folder.'),
+      el('li',{},'Click "Save all changes". Refresh your website to see the result.'),
+      el('li',{},'Always keep a copy of the whole folder as a backup.'))) ]}
+};
+function render() {
+  const t = $('#tabs'); t.innerHTML='';
+  Object.entries(TABS).forEach(([k,v]) => t.append(el('button',{class:k===tab?'on':'',onclick:()=>{tab=k;render();}},v.label)));
+  const m = $('#main'); m.innerHTML='';
+  if (!D.site) { m.append(el('div',{class:'notice warn'},'Click "1. Connect site folder" and choose your RaedClass folder to start.')); return; }
+  TABS[tab].render().forEach(n=>m.append(n));
+}
+readFromServer().then(()=>{ setDirty(false); render(); $('#status').textContent='Read-only (connect folder to save)'; }).catch(()=>render());
+render();
+</script>
+</body>
+</html>

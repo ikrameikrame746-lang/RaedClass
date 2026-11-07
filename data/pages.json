@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "about",
+    "title": { "ar": "من نحن", "fr": "À propos" },
+    "body": {
+      "ar": "<p>RaedClass موقع تعليمي يوفر دروسا وتمارين وفروضا وتصحيحات لجميع المستويات.</p>",
+      "fr": "<p>RaedClass est un site éducatif proposant cours, exercices, examens et corrigés pour tous les niveaux.</p>"
+    }
+  },
+  {
+    "slug": "contact",
+    "title": { "ar": "اتصل بنا", "fr": "Contact" },
+    "body": {
+      "ar": "<p>للتواصل: <a href=\"mailto:contact@example.com\">contact@example.com</a></p>",
+      "fr": "<p>Pour nous contacter : <a href=\"mailto:contact@example.com\">contact@example.com</a></p>"
+    }
+  }
+]

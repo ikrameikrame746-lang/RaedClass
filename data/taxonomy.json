@@ -1,0 +1,29 @@
+{
+  "levels": [
+    { "id": "lvl-primary", "name": { "ar": "الابتدائي", "fr": "Primaire" } },
+    { "id": "lvl-college", "name": { "ar": "الإعدادي", "fr": "Collège" } },
+    { "id": "lvl-lycee", "name": { "ar": "الثانوي", "fr": "Lycée" } }
+  ],
+  "grades": [
+    { "id": "g-6aep", "level": "lvl-primary", "name": { "ar": "السنة السادسة ابتدائي", "fr": "6ème année primaire" } },
+    { "id": "g-1ac", "level": "lvl-college", "name": { "ar": "الأولى إعدادي", "fr": "1ère année collège" } },
+    { "id": "g-2ac", "level": "lvl-college", "name": { "ar": "الثانية إعدادي", "fr": "2ème année collège" } },
+    { "id": "g-3ac", "level": "lvl-college", "name": { "ar": "الثالثة إعدادي", "fr": "3ème année collège" } },
+    { "id": "g-tc", "level": "lvl-lycee", "name": { "ar": "الجذع المشترك", "fr": "Tronc commun" } },
+    { "id": "g-1bac", "level": "lvl-lycee", "name": { "ar": "الأولى باكالوريا", "fr": "1ère Bac" } },
+    { "id": "g-2bac", "level": "lvl-lycee", "name": { "ar": "الثانية باكالوريا", "fr": "2ème Bac" } }
+  ],
+  "subjects": [
+    { "id": "s-math", "name": { "ar": "الرياضيات", "fr": "Mathématiques" } },
+    { "id": "s-physics", "name": { "ar": "الفيزياء والكيمياء", "fr": "Physique-Chimie" } },
+    { "id": "s-svt", "name": { "ar": "علوم الحياة والأرض", "fr": "SVT" } },
+    { "id": "s-arabic", "name": { "ar": "اللغة العربية", "fr": "Langue arabe" } },
+    { "id": "s-french", "name": { "ar": "اللغة الفرنسية", "fr": "Français" } }
+  ],
+  "categories": [
+    { "id": "lesson", "name": { "ar": "درس", "fr": "Cours" } },
+    { "id": "exercise", "name": { "ar": "تمارين", "fr": "Exercices" } },
+    { "id": "exam", "name": { "ar": "فرض", "fr": "Examen" } },
+    { "id": "correction", "name": { "ar": "تصحيح", "fr": "Corrigé" } }
+  ]
+}

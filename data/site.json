@@ -1,0 +1,42 @@
+{
+  "name": "RaedClass",
+  "defaultLang": "ar",
+  "logo": "",
+  "tagline": { "ar": "دروس وتمارين وفروض وتصحيحات", "fr": "Cours, exercices, examens et corrigés" },
+  "nav": [
+    { "label": { "ar": "الرئيسية", "fr": "Accueil" }, "href": "#/" },
+    { "label": { "ar": "المكتبة", "fr": "Bibliothèque" }, "href": "#/browse" },
+    { "label": { "ar": "الفروض", "fr": "Examens" }, "href": "#/browse?category=exam" },
+    { "label": { "ar": "من نحن", "fr": "À propos" }, "href": "#/page/about" },
+    { "label": { "ar": "اتصل بنا", "fr": "Contact" }, "href": "#/page/contact" }
+  ],
+  "home": {
+    "heroTitle": { "ar": "تعلّم بسهولة مع RaedClass", "fr": "Apprenez facilement avec RaedClass" },
+    "heroText": {
+      "ar": "دروس وتمارين وفروض وتصحيحات لجميع المستويات، جاهزة للتحميل بصيغة PDF وWord.",
+      "fr": "Cours, exercices, examens et corrigés pour tous les niveaux, à télécharger en PDF et Word."
+    },
+    "heroImage": "",
+    "sections": [
+      { "type": "levels", "title": { "ar": "المستويات الدراسية", "fr": "Niveaux scolaires" } },
+      { "type": "latest", "title": { "ar": "أحدث الموارد", "fr": "Dernières ressources" }, "count": 6 },
+      { "type": "subjects", "title": { "ar": "المواد", "fr": "Matières" } },
+      { "type": "categories", "title": { "ar": "حسب النوع", "fr": "Par type" } }
+    ]
+  },
+  "footer": { "ar": "© RaedClass - جميع الحقوق محفوظة", "fr": "© RaedClass - Tous droits réservés" },
+  "ui": {
+    "browse": { "ar": "المكتبة", "fr": "Bibliothèque" },
+    "search": { "ar": "ابحث…", "fr": "Rechercher…" },
+    "allGrades": { "ar": "كل الأقسام", "fr": "Toutes les classes" },
+    "allSubjects": { "ar": "كل المواد", "fr": "Toutes les matières" },
+    "allCategories": { "ar": "كل الأنواع", "fr": "Tous les types" },
+    "noResults": { "ar": "لا توجد نتائج.", "fr": "Aucun résultat." },
+    "download": { "ar": "تحميل", "fr": "Télécharger" },
+    "view": { "ar": "عرض", "fr": "Voir" },
+    "related": { "ar": "موارد مشابهة", "fr": "Ressources similaires" },
+    "back": { "ar": "رجوع", "fr": "Retour" },
+    "home": { "ar": "الرئيسية", "fr": "Accueil" },
+    "notFound": { "ar": "الصفحة غير موجودة.", "fr": "Page introuvable." }
+  }
+}
